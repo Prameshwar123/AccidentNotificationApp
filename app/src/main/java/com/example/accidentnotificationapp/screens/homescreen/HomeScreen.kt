@@ -79,13 +79,12 @@ fun HomeContent(navController: NavController?=null, value: Boolean = false){
 					)
 				},
 				actions = {
-					IconButton(onClick = { /* Handle notification click */ }) {
-						Icon(
-							imageVector = Icons.Filled.Notifications,
-							contentDescription = "Notifications",
-							tint = Color.Black
-						)
-					}
+					Icon(
+						imageVector = Icons.Filled.Notifications,
+						contentDescription = "Notifications",
+						tint = Color.Black,
+						modifier = Modifier.padding(end = 6.dp)
+					)
 				},
 				colors = TopAppBarDefaults.mediumTopAppBarColors(
 					containerColor = MaterialTheme.colorScheme.primaryContainer
