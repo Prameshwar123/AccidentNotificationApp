@@ -13,16 +13,27 @@ const registerUser = async (req, res) => {
         const exist = await User.findOne({ email });
         if (exist) {
             return res.json({
-                error: 'Email is taken already'
+                success: false,
+                message: 'Email is taken already',
+                user: null
             });
         }
         const hashedPassword = await hashPassword(password)
         const user = await User.create({
             name, email, password: hashedPassword
         });
-        return res.json(user);
+        return res.json({
+            success: true,
+            message: 'User registered successfully',
+            user
+        });
     } catch (error) {
         console.log('error');
+        res.status(500).json({
+            success: false,
+            message: 'Something went wrong. Please try again later.',
+            user: null
+        });
     }
 }
 
@@ -35,20 +46,35 @@ const loginUser = async (req, res) => {
         const user = await User.findOne({ email });
         if (!user) {
             return res.json({
-                error: 'No User Found'
+                success: false,
+                message: 'No User Found',
+                user: null
             });
         }
         // check if passwords match
         const match = await comparePassword(password, user.password);
         if (match) {
-            res.json('passwords match');
+            return res.json({
+                success: true,
+                message: 'Login successful',
+                user
+            });
         }
         else {
-            error: res.json('passwords do not match');
+            return res.json({
+                success: false,
+                message: 'Incorrect password',
+                user: null
+            });
         }
         // return res.json(user);
     } catch (error) {
         console.log('error');
+        res.status(500).json({
+            success: false,
+            message: 'Something went wrong. Please try again later.',
+            user: null
+        });
     }
 }
 
