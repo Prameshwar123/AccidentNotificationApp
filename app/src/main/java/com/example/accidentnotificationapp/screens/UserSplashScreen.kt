@@ -46,8 +46,7 @@ fun UserSplashScreen(navController: NavController) {
 //        } else {
 //            navController.navigate(ReaderScreens.ReaderHomeScreen.name)
 //        }
-//		navController.navigate(UserScreens.LoginScreen.name)
-		navController.navigate(UserScreens.HomeScreen.name)
+		navController.navigate(UserScreens.LoginScreen.name)
 	}
 	Surface(modifier = Modifier
 		.padding(15.dp)

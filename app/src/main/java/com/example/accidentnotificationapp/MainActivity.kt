@@ -16,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.accidentnotificationapp.data.UserPreferences
 import com.example.accidentnotificationapp.detection.MainViewModel
 import com.example.accidentnotificationapp.navigation.UserNavigation
 import com.example.accidentnotificationapp.ui.theme.AccidentNotificationAppTheme
@@ -26,20 +27,22 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val userPreferences = UserPreferences(this)
+        
         setContent {
             AccidentNotificationAppTheme {
                 val viewModel: MainViewModel by viewModels()
                 val accidentDetected by viewModel::accidentDetected
                 val t = remember { mutableStateOf(false) }
                 LaunchedEffect(accidentDetected) { t.value = accidentDetected }
-                UserApp(t.value)
+                UserApp(t.value, userPreferences)
             }
         }
     }
 }
 
 @Composable
-fun UserApp(value: Boolean) {
+fun UserApp(value: Boolean, userPreferences: UserPreferences) {
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background
@@ -47,7 +50,7 @@ fun UserApp(value: Boolean) {
         Column(verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            UserNavigation(value)
+            UserNavigation(value, userPreferences)
         }
     }
 }

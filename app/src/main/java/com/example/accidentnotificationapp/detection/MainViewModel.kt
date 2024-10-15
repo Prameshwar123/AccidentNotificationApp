@@ -29,14 +29,12 @@ class MainViewModel @Inject constructor(
         gyroscopeSensor.startListening()
         accelerometerSensor.setOnSensorValuesChangedListener { values ->
             if (values.size == 3) {
-                Log.d("MainViewModel", "Accelerometer data: $accelerometerData")
                 accelerometerData = values.take(3)
                 checkForAccident()
             }
         }
         gyroscopeSensor.setOnSensorValuesChangedListener { values ->
             if (values.size == 3) {
-                Log.d("MainViewModel", "Gyroscope data: $gyroscopeData")
                 gyroscopeData = values.take(3)
                 checkForAccident()
             }
@@ -56,14 +54,8 @@ class MainViewModel @Inject constructor(
             val gyroscopeMagnitude = sqrt(gx * gx + gy * gy + gz * gz)
             val accelerationThreshold = 8.6f
 //            val gyroscopeThreshold = 3.0f
-            Log.d("valuesinside", "Acceleration magnitude: $accelerationMagnitude")
-            Log.d("valuesinside", "Gyroscope magnitude: $gyroscopeMagnitude")
 //            if (accelerationMagnitude > accelerationThreshold && gyroscopeMagnitude > gyroscopeThreshold) {
             if (accelerationMagnitude > accelerationThreshold) {
-                Log.d(
-                    "Accident",
-                    "Accident detected with acceleration: $accelerationMagnitude, gyroscope: $gyroscopeMagnitude"
-                )
                 accidentDetected = true
             } else {
                 accidentDetected = false

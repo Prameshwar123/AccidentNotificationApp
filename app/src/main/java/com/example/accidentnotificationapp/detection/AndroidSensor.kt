@@ -21,7 +21,6 @@ abstract class AndroidSensor(
 
     override fun startListening() {
         if(!doesSensorExist) {
-            Log.d("AndroidSensor", "Sensor does not exist $sensorFeature")
             return
         }
         if(!::sensorManager.isInitialized && sensor == null) {
@@ -29,14 +28,12 @@ abstract class AndroidSensor(
             sensor = sensorManager.getDefaultSensor(sensorType)
         }
         sensor?.let {
-            Log.d("AndroidSensor", "Starting to listen to sensor")
             sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
         }
     }
 
     override fun stopListening() {
         if(!doesSensorExist || !::sensorManager.isInitialized) {
-            Log.d("AndroidSensor", "Cannot stop listening, sensor does not exist or not initialized")
             return
         }
         sensorManager.unregisterListener(this)
@@ -44,11 +41,9 @@ abstract class AndroidSensor(
 
     override fun onSensorChanged(event: SensorEvent?) {
         if(!doesSensorExist) {
-            Log.d("AndroidSensor", "Sensor changed but does not exist")
             return
         }
         if(event?.sensor?.type == sensorType) {
-            Log.d("AndroidSensor", "Sensor values changed: ${event.values.toList()}")
             onSensorValuesChanged?.invoke(event.values.toList())
         }
     }
