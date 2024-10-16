@@ -1,6 +1,11 @@
 package com.example.accidentnotificationapp.network
 
+import android.content.Context
+import android.util.Log
 import com.example.accidentnotificationapp.data.Contact
+import com.example.accidentnotificationapp.data.UserPreferences
+import kotlinx.coroutines.runBlocking
+import okhttp3.OkHttpClient
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -9,6 +14,23 @@ import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
+
+private const val BASE_URL = "https://accidentnotificationappbackend.onrender.com/"
+
+object RetrofitInstance {
+	
+	fun getRetrofit(context: Context): Retrofit {
+		val okHttpClient = OkHttpClient.Builder()
+			.addInterceptor(CookieInterceptor(context))
+			.build()
+		
+		return Retrofit.Builder()
+			.baseUrl(BASE_URL)
+			.client(okHttpClient)
+			.addConverterFactory(GsonConverterFactory.create())
+			.build()
+	}
+}
 
 data class User(var name: String, var email: String, var password: String)
 data class LoginRequest(var email: String, var password: String)
@@ -19,13 +41,11 @@ data class ContactResponse(var success: Boolean, var message: String?, var conta
 data class ContactsResponse(var success: Boolean, var contacts: List<Contact>?)
 data class ApiContact(val _id: String?, val name: String, val phoneNumber: String)
 
-private const val BASE_URL = "https://accidentnotificationappbackend.onrender.com/"
-
 interface RetrofitAPI {
-
+	
 	@POST("login")
 	fun loginUser(@Body request: LoginRequest): Call<ApiResponse>
-
+	
 	@POST("register")
 	fun registerUser(@Body request: SignupRequest): Call<ApiResponse>
 	
@@ -43,20 +63,26 @@ fun performSignup(
 	name: String,
 	email: String,
 	password: String,
+	context: Context,
 	onResult: (Boolean, String?) -> Unit
 ) {
 	val request = SignupRequest(name, email, password)
-	val retrofit = Retrofit.Builder()
-		.baseUrl(BASE_URL)
-		.addConverterFactory(GsonConverterFactory.create())
-		.build()
+	val retrofit = RetrofitInstance.getRetrofit(context)
 	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
 	val call: Call<ApiResponse> = retrofitAPI.registerUser(request)
+	
 	call.enqueue(object : Callback<ApiResponse> {
 		override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
 			val apiResponse: ApiResponse? = response.body()
 			if (apiResponse != null && apiResponse.success) {
 				onResult(true, apiResponse.message)
+				val cookie = response.headers()["Set-Cookie"]
+				if (cookie != null) {
+					val userPreferences = UserPreferences(context)
+					runBlocking {
+						userPreferences.setLoginState(true, email, cookie)
+					}
+				}
 			} else {
 				onResult(false, apiResponse?.message ?: "Registration failed")
 			}
@@ -71,20 +97,26 @@ fun performSignup(
 fun performLogin(
 	email: String,
 	password: String,
+	context: Context,
 	onResult: (Boolean, String?) -> Unit
 ) {
 	val request = LoginRequest(email, password)
-	val retrofit = Retrofit.Builder()
-		.baseUrl(BASE_URL)
-		.addConverterFactory(GsonConverterFactory.create())
-		.build()
+	val retrofit = RetrofitInstance.getRetrofit(context)
 	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
 	val call: Call<ApiResponse> = retrofitAPI.loginUser(request)
+	
 	call.enqueue(object : Callback<ApiResponse> {
 		override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
 			val apiResponse: ApiResponse? = response.body()
 			if (apiResponse != null && apiResponse.success) {
 				onResult(true, apiResponse.message)
+				val cookie = response.headers()["Set-Cookie"]
+				if (cookie != null) {
+					val userPreferences = UserPreferences(context)
+					runBlocking {
+						userPreferences.setLoginState(true, email, cookie)
+					}
+				}
 			} else {
 				onResult(false, apiResponse?.message ?: "Login failed")
 			}
@@ -99,16 +131,14 @@ fun performLogin(
 fun addContact(
 	name: String,
 	phoneNumber: String,
+	context: Context,
 	onResult: (Boolean, String?) -> Unit
 ) {
 	val request = ContactRequest(name, phoneNumber)
-	val retrofit = Retrofit.Builder()
-		.baseUrl(BASE_URL)
-		.addConverterFactory(GsonConverterFactory.create())
-		.build()
-	
+	val retrofit = RetrofitInstance.getRetrofit(context)
 	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
 	val call: Call<ContactResponse> = retrofitAPI.addContact(request)
+	
 	call.enqueue(object : Callback<ContactResponse> {
 		override fun onResponse(call: Call<ContactResponse>, response: Response<ContactResponse>) {
 			val apiResponse: ContactResponse? = response.body()
@@ -126,15 +156,13 @@ fun addContact(
 }
 
 fun getContacts(
+	context: Context,
 	onResult: (Boolean, List<Contact>?) -> Unit
 ) {
-	val retrofit = Retrofit.Builder()
-		.baseUrl(BASE_URL)
-		.addConverterFactory(GsonConverterFactory.create())
-		.build()
-	
+	val retrofit = RetrofitInstance.getRetrofit(context)
 	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
 	val call: Call<ContactsResponse> = retrofitAPI.getContacts()
+	
 	call.enqueue(object : Callback<ContactsResponse> {
 		override fun onResponse(call: Call<ContactsResponse>, response: Response<ContactsResponse>) {
 			val contactsResponse: ContactsResponse? = response.body()
@@ -144,24 +172,26 @@ fun getContacts(
 				onResult(false, null)
 			}
 		}
+		
 		override fun onFailure(call: Call<ContactsResponse>, t: Throwable) {
 			onResult(false, null)
 		}
 	})
 }
 
-fun performLogout(onResult: (Boolean, String?) -> Unit) {
-	val retrofit = Retrofit.Builder()
-		.baseUrl(BASE_URL)
-		.addConverterFactory(GsonConverterFactory.create())
-		.build()
-	
+fun performLogout(context: Context, onResult: (Boolean, String?) -> Unit) {
+	val retrofit = RetrofitInstance.getRetrofit(context)
 	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
 	val call: Call<ApiResponse> = retrofitAPI.logout()
+	
 	call.enqueue(object : Callback<ApiResponse> {
 		override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
 			val apiResponse: ApiResponse? = response.body()
 			if (apiResponse != null && apiResponse.success) {
+				val userPreferences = UserPreferences(context)
+				runBlocking {
+					userPreferences.logout()
+				}
 				onResult(true, apiResponse.message)
 			} else {
 				onResult(false, apiResponse?.message ?: "Logout failed")
@@ -173,5 +203,3 @@ fun performLogout(onResult: (Boolean, String?) -> Unit) {
 		}
 	})
 }
-
-

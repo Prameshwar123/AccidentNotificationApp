@@ -67,12 +67,9 @@ fun UserLoginScreen(navController: NavController, userPreferences: UserPreferenc
 			AuthButton(
 				text = "Login",
 				onClick = {
-					performLogin(email, password) { success, message ->
+					performLogin(email, password, context) { success, message ->
 						if (success) {
-							coroutineScope.launch {
-								userPreferences.setLoginState(true, email)
-							}
-							navController.navigate(UserScreens.HomeScreen.name)
+								navController.navigate(UserScreens.HomeScreen.name)
 						} else {
 							showMessage = message
 						}
@@ -105,11 +102,8 @@ fun UserLoginScreen(navController: NavController, userPreferences: UserPreferenc
 			AuthButton(
 				text = "Signup",
 				onClick = {
-					performSignup(name, email, password) { success, message ->
+					performSignup(name, email, password, context) { success, message ->
 						if (success) {
-							coroutineScope.launch {
-								userPreferences.setLoginState(true, email)
-							}
 							navController.navigate(UserScreens.HomeScreen.name)
 						} else {
 							showMessage = message

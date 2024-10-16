@@ -1,52 +1,23 @@
 package com.example.accidentnotificationapp.screens
 
-import android.util.Log
+import androidx.compose.ui.tooling.preview.Preview
+
 import android.widget.Toast
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.Button
-import androidx.compose.material3.Card
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -55,10 +26,7 @@ import androidx.navigation.NavController
 import com.example.accidentnotificationapp.data.Contact
 import com.example.accidentnotificationapp.data.UserPreferences
 import com.example.accidentnotificationapp.navigation.UserScreens
-import com.example.accidentnotificationapp.network.ApiContact
-import com.example.accidentnotificationapp.network.addContact
-import com.example.accidentnotificationapp.network.getContacts
-import com.example.accidentnotificationapp.network.performLogout
+import com.example.accidentnotificationapp.network.*
 import kotlinx.coroutines.launch
 
 @Composable
@@ -68,7 +36,6 @@ fun Home(navController: NavController, userPreferences: UserPreferences) {
 	}
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeContent(navController: NavController, userPreferences: UserPreferences) {
 	var contacts by remember { mutableStateOf(listOf<Contact>()) }
@@ -79,7 +46,7 @@ fun HomeContent(navController: NavController, userPreferences: UserPreferences) 
 	val context = LocalContext.current
 	
 	LaunchedEffect(Unit) {
-		getContacts { success, fetchedContacts ->
+		getContacts(context) { success, fetchedContacts ->
 			if (success) {
 				contacts = fetchedContacts?.map { apiContactToUiContact(it) } ?: listOf()
 			} else {
@@ -90,51 +57,10 @@ fun HomeContent(navController: NavController, userPreferences: UserPreferences) 
 	
 	Scaffold(
 		topBar = {
-			TopAppBar(
-				title = {
-					Text(
-						text = "Accident Notification App",
-						color = Color.Black,
-						fontSize = 20.sp,
-						fontWeight = FontWeight.W400
-					)
-				},
-				navigationIcon = {
-					IconButton(onClick = { menuExpanded = true }) {
-						Icon(
-							imageVector = Icons.Filled.Menu,
-							contentDescription = "Menu",
-						)
-					}
-					DropdownMenu(
-						expanded = menuExpanded,
-						onDismissRequest = { menuExpanded = false }
-					) {
-						DropdownMenuItem(text = { Text("Action 1") }, onClick = { menuExpanded = false })
-						DropdownMenuItem(text = { Text("Action 2") }, onClick = { menuExpanded = false })
-						DropdownMenuItem(text = { Text("Action 3") }, onClick = { menuExpanded = false })
-					}
-				},
-				actions = {
-					IconButton(onClick = { showLogoutDialog = true }) {
-						Icon(
-							imageVector = Icons.AutoMirrored.Filled.ExitToApp,
-							contentDescription = "Logout",
-							tint = Color.Black
-						)
-					}
-					IconButton(onClick = { }) {
-						Icon(
-							imageVector = Icons.Filled.Notifications,
-							contentDescription = "Notifications",
-							tint = Color.Black,
-							modifier = Modifier.padding(end = 6.dp)
-						)
-					}
-				},
-				colors = TopAppBarDefaults.mediumTopAppBarColors(
-					containerColor = MaterialTheme.colorScheme.primaryContainer
-				)
+			HomeTopBar(
+				menuExpanded = menuExpanded,
+				onMenuExpand = { menuExpanded = it },
+				onLogoutClick = { showLogoutDialog = true }
 			)
 		},
 		floatingActionButton = {
@@ -150,21 +76,9 @@ fun HomeContent(navController: NavController, userPreferences: UserPreferences) 
 				contentAlignment = Alignment.TopStart
 			) {
 				if (contacts.isEmpty()) {
-					Text(
-						"No contacts available,\n\nPlease add a contact.",
-						style = MaterialTheme.typography.titleMedium.copy(
-							fontSize = 27.sp,
-							fontWeight = FontWeight.Light
-						),
-						textAlign = TextAlign.Center,
-						modifier = Modifier.align(Alignment.Center)
-					)
+					EmptyContactState()
 				} else {
-					LazyColumn(modifier = Modifier.align(Alignment.TopStart).padding(16.dp)) {
-						items(contacts.size) { index ->
-							ContactCard(contact = contacts[index])
-						}
-					}
+					ContactList(contacts)
 				}
 				
 				if (showDialog) {
@@ -173,12 +87,20 @@ fun HomeContent(navController: NavController, userPreferences: UserPreferences) 
 						onAddContact = { newContact ->
 							scope.launch {
 								val apiContact = uiContactToApiContact(newContact)
-								addContact(apiContact.name, apiContact.phoneNumber) { success, message ->
+								addContact(apiContact.name, apiContact.phoneNumber, context) { success, message ->
 									if (success) {
 										contacts = contacts + newContact
-										Toast.makeText(context, message ?: "Contact added successfully", Toast.LENGTH_SHORT).show()
+										Toast.makeText(
+											context,
+											message ?: "Contact added successfully",
+											Toast.LENGTH_SHORT
+										).show()
 									} else {
-										Toast.makeText(context, message ?: "Failed to add contact", Toast.LENGTH_SHORT).show()
+										Toast.makeText(
+											context,
+											message ?: "Failed to add contact",
+											Toast.LENGTH_SHORT
+										).show()
 									}
 								}
 							}
@@ -191,14 +113,18 @@ fun HomeContent(navController: NavController, userPreferences: UserPreferences) 
 						onDismiss = { showLogoutDialog = false },
 						onConfirmLogout = {
 							scope.launch {
-								performLogout { success, message ->
+								performLogout(context) { success, message ->
 									if (success) {
 										scope.launch {
 											userPreferences.logout()
 										}
 										navController.navigate(UserScreens.LoginScreen.name)
 									} else {
-										Toast.makeText(context, message ?: "Logout failed", Toast.LENGTH_SHORT).show()
+										Toast.makeText(
+											context,
+											message ?: "Logout failed",
+											Toast.LENGTH_SHORT
+										).show()
 									}
 								}
 							}
@@ -208,6 +134,84 @@ fun HomeContent(navController: NavController, userPreferences: UserPreferences) 
 			}
 		}
 	)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HomeTopBar(
+	menuExpanded: Boolean,
+	onMenuExpand: (Boolean) -> Unit,
+	onLogoutClick: () -> Unit
+) {
+	TopAppBar(
+		title = {
+			Text(
+				text = "Accident Notification App",
+				color = Color.Black,
+				fontSize = 20.sp,
+				fontWeight = FontWeight.W400
+			)
+		},
+		navigationIcon = {
+			IconButton(onClick = { onMenuExpand(true) }) {
+				Icon(imageVector = Icons.Filled.Menu, contentDescription = "Menu")
+			}
+			DropdownMenu(
+				expanded = menuExpanded,
+				onDismissRequest = { onMenuExpand(false) }
+			) {
+				DropdownMenuItem(text = { Text("Action 1") }, onClick = { onMenuExpand(false) })
+				DropdownMenuItem(text = { Text("Action 2") }, onClick = { onMenuExpand(false) })
+				DropdownMenuItem(text = { Text("Action 3") }, onClick = { onMenuExpand(false) })
+			}
+		},
+		actions = {
+			IconButton(onClick = onLogoutClick) {
+				Icon(
+					imageVector = Icons.AutoMirrored.Filled.ExitToApp,
+					contentDescription = "Logout",
+					tint = Color.Black
+				)
+			}
+			IconButton(onClick = { }) {
+				Icon(
+					imageVector = Icons.Filled.Notifications,
+					contentDescription = "Notifications",
+					tint = Color.Black,
+					modifier = Modifier.padding(end = 6.dp)
+				)
+			}
+		},
+		colors = TopAppBarDefaults.mediumTopAppBarColors(
+			containerColor = MaterialTheme.colorScheme.primaryContainer
+		)
+	)
+}
+
+@Composable
+fun EmptyContactState() {
+	Box(
+		modifier = Modifier.fillMaxSize(),
+		contentAlignment = Alignment.Center
+	) {
+		Text(
+			text = "No contacts available,\n\nPlease add a contact.",
+			style = MaterialTheme.typography.titleMedium.copy(
+				fontSize = 27.sp,
+				fontWeight = FontWeight.Light
+			),
+			textAlign = TextAlign.Center
+		)
+	}
+}
+
+@Composable
+fun ContactList(contacts: List<Contact>) {
+	LazyColumn(modifier = Modifier.padding(16.dp)) {
+		items(contacts.size) { index ->
+			ContactCard(contact = contacts[index])
+		}
+	}
 }
 
 @Composable
