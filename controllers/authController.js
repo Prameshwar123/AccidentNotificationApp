@@ -15,6 +15,7 @@ const registerUser = async (req, res) => {
         }
         const hashedPassword = await hashPassword(password);
         const user = await User.create({ name, email, password: hashedPassword });
+        req.session.userId = user._id;
         return res.json({
             success: true,
             message: 'User registered successfully',
