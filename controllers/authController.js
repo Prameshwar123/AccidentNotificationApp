@@ -42,7 +42,6 @@ const loginUser = async (req, res) => {
                 user: null
             });
         }
-
         const match = await comparePassword(password, user.password);
         if (match) {
             req.session.userId = user._id;
