@@ -114,19 +114,14 @@ const deleteContact = async (req, res) => {
         return res.status(401).json({ message: 'Unauthorized' });
     }
     try {
-        const { contactId } = req.params; 
-        const userId = req.session.userId;
-        const contact = await Contact.findOneAndDelete({ _id: contactId, userId });
-        if (!contact) {
-            return res.status(404).json({
-                success: false,
-                message: 'Contact not found or not authorized to delete',
-            });
-        }
-        return res.status(200).json({
-            success: true,
-            message: 'Contact deleted successfully',
-        });
+          const contact = await Contact.findOne({ _id: req.params.contactId, userId: req.session.userId });
+          if (contact) {
+            await contact.remove();
+            res.json({ success: true, message: "Contact removed successfully" });
+          } else {
+            res.status(404);
+            res.json({ success: false, message: "Contact not found or unauthorized" });
+          }
     } catch (error) {
         console.error('Error deleting contact:', error);
         return res.status(500).json({
