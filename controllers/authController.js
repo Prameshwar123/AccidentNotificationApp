@@ -113,6 +113,7 @@ const deleteContact = async (req, res) => {
     if (!req.session.userId) {
         return res.status(401).json({ message: 'Unauthorized' });
     }
+    const contactId = req.params.id;
     try {
         const contact = await Contact.findById(contactId);
         if (!contact) {
