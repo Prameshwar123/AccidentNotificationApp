@@ -7,5 +7,6 @@ router.post('/login', loginUser)
 router.post('/logout', logoutUser);
 router.post('/contacts', addContact);
 router.get('/contacts', getContacts);
+router.delete('/contacts/:contactId', deleteContact);
 
 module.exports = router
