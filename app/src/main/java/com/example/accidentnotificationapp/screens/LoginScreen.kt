@@ -8,28 +8,37 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Done
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.example.accidentnotificationapp.data.UserPreferences
 import com.example.accidentnotificationapp.navigation.UserScreens
 import com.example.accidentnotificationapp.network.performLogin
 import com.example.accidentnotificationapp.network.performSignup
-import kotlinx.coroutines.launch
 
 @Composable
 fun UserLoginScreen(navController: NavController, userPreferences: UserPreferences) {
@@ -39,7 +48,6 @@ fun UserLoginScreen(navController: NavController, userPreferences: UserPreferenc
 	var password by remember { mutableStateOf("") }
 	var showMessage by remember { mutableStateOf<String?>(null) }
 	val context = LocalContext.current
-	val coroutineScope = rememberCoroutineScope()
 	
 	val isLoggedIn by userPreferences.isLoggedIn.collectAsState(initial = false)
 	
@@ -69,7 +77,7 @@ fun UserLoginScreen(navController: NavController, userPreferences: UserPreferenc
 				onClick = {
 					performLogin(email, password, context) { success, message ->
 						if (success) {
-								navController.navigate(UserScreens.HomeScreen.name)
+							navController.navigate(UserScreens.HomeScreen.name)
 						} else {
 							showMessage = message
 						}
@@ -156,10 +164,37 @@ fun EmailPasswordFields(
 		label = "Email"
 	)
 	Spacer(modifier = Modifier.height(8.dp))
-	TextFieldWithLabel(
+	PasswordField(
+		password = password,
+		onPasswordChange = onPasswordChange
+	)
+}
+
+@Composable
+fun PasswordField(
+	password: String,
+	onPasswordChange: (String) -> Unit
+) {
+	var passwordVisible by remember { mutableStateOf(false) }
+	
+	TextField(
 		value = password,
 		onValueChange = onPasswordChange,
-		label = "Password"
+		label = { Text("Password") },
+		visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+		trailingIcon = {
+			val image = if (passwordVisible)
+				Icons.Filled.Done
+			else Icons.Filled.Close
+			
+			IconButton(onClick = { passwordVisible = !passwordVisible }) {
+				Icon(imageVector = image, contentDescription = if (passwordVisible) "Hide password" else "Show password")
+			}
+		},
+		keyboardOptions = KeyboardOptions(
+			keyboardType = KeyboardType.Password,
+			imeAction = ImeAction.Done
+		),
 	)
 }
 

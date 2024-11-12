@@ -12,7 +12,7 @@ import androidx.compose.ui.unit.dp
 fun UserLogo(modifier: Modifier = Modifier) {
 	Text(
 		modifier = modifier.padding(bottom = 16.dp),
-		text = "  Accident\nNotification\n     App",
+		text = "  Accident\nNotification\n       App",
 		style = MaterialTheme.typography.displaySmall,
 		color = Color.Blue.copy(alpha = 0.7f)
 	)

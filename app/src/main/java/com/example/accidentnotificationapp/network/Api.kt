@@ -1,8 +1,13 @@
 package com.example.accidentnotificationapp.network
 
 import android.content.Context
-import android.util.Log
-import com.example.accidentnotificationapp.data.Contact
+import com.example.accidentnotificationapp.data.ApiContact
+import com.example.accidentnotificationapp.data.ApiResponse
+import com.example.accidentnotificationapp.data.ContactRequest
+import com.example.accidentnotificationapp.data.ContactResponse
+import com.example.accidentnotificationapp.data.ContactsResponse
+import com.example.accidentnotificationapp.data.LoginRequest
+import com.example.accidentnotificationapp.data.SignupRequest
 import com.example.accidentnotificationapp.data.UserPreferences
 import kotlinx.coroutines.runBlocking
 import okhttp3.OkHttpClient
@@ -12,8 +17,10 @@ import retrofit2.Response
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.POST
+import retrofit2.http.Path
 
 private const val BASE_URL = "https://accidentnotificationappbackend.onrender.com/"
 
@@ -32,14 +39,6 @@ object RetrofitInstance {
 	}
 }
 
-data class User(var name: String, var email: String, var password: String)
-data class LoginRequest(var email: String, var password: String)
-data class SignupRequest(var name: String, var email: String, var password: String)
-data class ApiResponse(var success: Boolean, var message: String?, var user: User?)
-data class ContactRequest(val name: String, val phoneNumber: String)
-data class ContactResponse(var success: Boolean, var message: String?, var contact: Contact?)
-data class ContactsResponse(var success: Boolean, var contacts: List<Contact>?)
-data class ApiContact(val _id: String?, val name: String, val phoneNumber: String)
 
 interface RetrofitAPI {
 	
@@ -57,6 +56,9 @@ interface RetrofitAPI {
 	
 	@POST("logout")
 	fun logout(): Call<ApiResponse>
+	
+	@DELETE("contacts/{id}")
+	fun deleteContact(@Path("id") id: String): Call<ContactResponse>
 }
 
 fun performSignup(
@@ -157,7 +159,7 @@ fun addContact(
 
 fun getContacts(
 	context: Context,
-	onResult: (Boolean, List<Contact>?) -> Unit
+	onResult: (Boolean, List<ApiContact>?) -> Unit
 ) {
 	val retrofit = RetrofitInstance.getRetrofit(context)
 	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
@@ -178,6 +180,32 @@ fun getContacts(
 		}
 	})
 }
+
+fun deleteContact(
+	contactId: String,
+	context: Context,
+	onResult: (Boolean, String?) -> Unit
+) {
+	val retrofit = RetrofitInstance.getRetrofit(context)
+	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
+	val call: Call<ContactResponse> = retrofitAPI.deleteContact(contactId)
+	
+	call.enqueue(object : Callback<ContactResponse> {
+		override fun onResponse(call: Call<ContactResponse>, response: Response<ContactResponse>) {
+			val apiResponse: ContactResponse? = response.body()
+			if (apiResponse != null && apiResponse.success) {
+				onResult(true, apiResponse.message)
+			} else {
+				onResult(false, apiResponse?.message ?: "Failed to delete contact")
+			}
+		}
+		
+		override fun onFailure(call: Call<ContactResponse>, t: Throwable) {
+			onResult(false, t.message)
+		}
+	})
+}
+
 
 fun performLogout(context: Context, onResult: (Boolean, String?) -> Unit) {
 	val retrofit = RetrofitInstance.getRetrofit(context)
@@ -203,3 +231,4 @@ fun performLogout(context: Context, onResult: (Boolean, String?) -> Unit) {
 		}
 	})
 }
+

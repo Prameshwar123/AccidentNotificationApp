@@ -20,7 +20,7 @@ fun UserNavigation(value: Boolean, userPreferences: UserPreferences){
             UserLoginScreen(navController = navController, userPreferences = userPreferences)
         }
         composable(UserScreens.HomeScreen.name) {
-            Home(navController = navController, userPreferences = userPreferences)
+            Home(navController = navController, userPreferences = userPreferences, value = value)
         }
     }
 }
