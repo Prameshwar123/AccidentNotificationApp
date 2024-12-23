@@ -1,5 +1,8 @@
 package com.example.accidentnotificationapp.screens
 
+import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -48,38 +51,53 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.navigation.NavController
-import com.example.accidentnotificationapp.SendSMS
 import com.example.accidentnotificationapp.data.ApiContact
 import com.example.accidentnotificationapp.data.Contact
 import com.example.accidentnotificationapp.data.UserPreferences
+import com.example.accidentnotificationapp.getAddress
+import com.example.accidentnotificationapp.isAccidentHappened
 import com.example.accidentnotificationapp.navigation.UserScreens
 import com.example.accidentnotificationapp.network.addContact
 import com.example.accidentnotificationapp.network.deleteContact
 import com.example.accidentnotificationapp.network.getContacts
 import com.example.accidentnotificationapp.network.performLogout
+import com.example.accidentnotificationapp.sms.SendSMS
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
+
+private const val REQUEST_SMS_PERMISSION = 101
+
 @Composable
-fun Home(navController: NavController, userPreferences: UserPreferences, value: Boolean) {
+fun Home(
+	navController: NavController,
+	userPreferences: UserPreferences,
+) {
 	Surface(modifier = Modifier.fillMaxSize()) {
-		HomeContent(navController, userPreferences, value)
+		HomeContent(navController, userPreferences)
 	}
 }
 
 @Composable
-fun HomeContent(navController: NavController, userPreferences: UserPreferences, value: Boolean) {
+fun HomeContent(
+	navController: NavController,
+	userPreferences: UserPreferences,
+) {
 	var IdContacts by remember { mutableStateOf(listOf<ApiContact>()) }
 	var contacts by remember { mutableStateOf(listOf<Contact>()) }
 	var showAddDialog by remember { mutableStateOf(false) }
 	var showDeleteDialog by remember { mutableStateOf<Contact?>(null) }
 	var showLogoutDialog by remember { mutableStateOf(false) }
 	var menuExpanded by remember { mutableStateOf(false) }
-	var accidentDetected by remember { mutableStateOf(true) }
+	var accidentDetected = isAccidentHappened()
 	val scope = rememberCoroutineScope()
+	var address = getAddress()
 	val context = LocalContext.current
-	
+	var permissionGranted by remember { mutableStateOf(false) }
 	LaunchedEffect(Unit) {
 		getContacts(context) { success, fetchedContacts ->
 			if (success) {
@@ -91,10 +109,32 @@ fun HomeContent(navController: NavController, userPreferences: UserPreferences, 
 				Toast.makeText(context, "Failed to load contacts", Toast.LENGTH_SHORT).show()
 			}
 		}
+		if(ContextCompat.checkSelfPermission(context, Manifest.permission.SEND_SMS) == PackageManager.PERMISSION_GRANTED ) { permissionGranted = true } else {
+			ActivityCompat.requestPermissions(
+				context as Activity,
+				arrayOf(Manifest.permission.SEND_SMS),
+				REQUEST_SMS_PERMISSION
+			)
+		}
 	}
-	if(accidentDetected && contacts.isNotEmpty()) {
-		SendSMS(context, contacts)
-		accidentDetected = false
+	var x by remember {
+		mutableStateOf(false)
+	}
+	LaunchedEffect(Unit) {
+		while (!x) {
+			permissionGranted = ContextCompat.checkSelfPermission(
+				context,
+				Manifest.permission.SEND_SMS
+			) == PackageManager.PERMISSION_GRANTED
+			if (permissionGranted && accidentDetected && contacts.isNotEmpty()) {
+				x = true
+				accidentDetected = false
+			}
+			delay(1000L)
+		}
+	}
+	if(x) {
+		SendSMS(context = context, contacts = contacts, address = address)
 	}
 	Scaffold(
 		topBar = {

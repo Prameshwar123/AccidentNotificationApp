@@ -1,12 +1,12 @@
 package com.example.accidentnotificationapp.detection
 
-import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlin.math.abs
 import kotlin.math.sqrt
 
 @HiltViewModel
@@ -52,10 +52,9 @@ class MainViewModel @Inject constructor(
 
             val accelerationMagnitude = sqrt(ax * ax + ay * ay + az * az)
             val gyroscopeMagnitude = sqrt(gx * gx + gy * gy + gz * gz)
-            val accelerationThreshold = 8.6f
-//            val gyroscopeThreshold = 3.0f
-//            if (accelerationMagnitude > accelerationThreshold && gyroscopeMagnitude > gyroscopeThreshold) {
-            if (accelerationMagnitude > accelerationThreshold) {
+            val accelerationThreshold = 40f
+            val gyroscopeThreshold = 3.0f
+            if (accelerationMagnitude > accelerationThreshold && abs(gyroscopeMagnitude) > gyroscopeThreshold) {
                 accidentDetected = true
             } else {
                 accidentDetected = false

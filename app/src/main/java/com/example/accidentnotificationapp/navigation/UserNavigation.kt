@@ -1,6 +1,7 @@
 package com.example.accidentnotificationapp.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -10,7 +11,7 @@ import com.example.accidentnotificationapp.screens.Home
 import com.example.accidentnotificationapp.screens.UserSplashScreen
 
 @Composable
-fun UserNavigation(value: Boolean, userPreferences: UserPreferences){
+fun UserNavigation(userPreferences: UserPreferences){
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = UserScreens.SplashScreen.name) {
         composable(UserScreens.SplashScreen.name){
@@ -20,7 +21,7 @@ fun UserNavigation(value: Boolean, userPreferences: UserPreferences){
             UserLoginScreen(navController = navController, userPreferences = userPreferences)
         }
         composable(UserScreens.HomeScreen.name) {
-            Home(navController = navController, userPreferences = userPreferences, value = value)
+            Home(navController = navController, userPreferences = userPreferences)
         }
     }
 }

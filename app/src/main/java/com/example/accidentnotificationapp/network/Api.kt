@@ -96,6 +96,7 @@ fun performSignup(
 	})
 }
 
+
 fun performLogin(
 	email: String,
 	password: String,
@@ -106,7 +107,6 @@ fun performLogin(
 	val retrofit = RetrofitInstance.getRetrofit(context)
 	val retrofitAPI = retrofit.create(RetrofitAPI::class.java)
 	val call: Call<ApiResponse> = retrofitAPI.loginUser(request)
-	
 	call.enqueue(object : Callback<ApiResponse> {
 		override fun onResponse(call: Call<ApiResponse>, response: Response<ApiResponse>) {
 			val apiResponse: ApiResponse? = response.body()
