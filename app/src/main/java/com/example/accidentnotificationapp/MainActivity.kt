@@ -30,7 +30,7 @@ class MainActivity : ComponentActivity() {
         val userPreferences = UserPreferences(this)
         setContent {
             AccidentNotificationAppTheme {
-                locationHelper = LocationHelper(this, this)
+                locationHelper = LocationHelper(this@MainActivity, applicationContext)
                 UserApp(userPreferences)
                 address = locationHelper.getAddress()
                 accident = locationHelper.isAccidentHappened()
