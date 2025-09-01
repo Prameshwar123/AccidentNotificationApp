@@ -65,7 +65,7 @@ import com.example.accidentnotificationapp.network.addContact
 import com.example.accidentnotificationapp.network.deleteContact
 import com.example.accidentnotificationapp.network.getContacts
 import com.example.accidentnotificationapp.network.performLogout
-import com.example.accidentnotificationapp.sms.SendSMS
+import com.example.accidentnotificationapp.sms.sendSMS
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -95,7 +95,7 @@ fun HomeContent(
 	var menuExpanded by remember { mutableStateOf(false) }
 	var accidentDetected = isAccidentHappened()
 	val scope = rememberCoroutineScope()
-	var address = getAddress()
+	val address = getAddress()
 	val context = LocalContext.current
 	var permissionGranted by remember { mutableStateOf(false) }
 	LaunchedEffect(Unit) {
@@ -117,24 +117,24 @@ fun HomeContent(
 			)
 		}
 	}
-	var x by remember {
+	var allConditionsMet by remember {
 		mutableStateOf(false)
 	}
 	LaunchedEffect(Unit) {
-		while (!x) {
+		while (!allConditionsMet) {
 			permissionGranted = ContextCompat.checkSelfPermission(
 				context,
 				Manifest.permission.SEND_SMS
 			) == PackageManager.PERMISSION_GRANTED
 			if (permissionGranted && accidentDetected && contacts.isNotEmpty()) {
-				x = true
+				allConditionsMet = true
 				accidentDetected = false
 			}
 			delay(1000L)
 		}
 	}
-	if(x) {
-		SendSMS(context = context, contacts = contacts, address = address)
+	if(allConditionsMet) {
+		sendSMS(context = context, contacts = contacts, address = address)
 	}
 	Scaffold(
 		topBar = {
