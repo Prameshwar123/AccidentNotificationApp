@@ -6,7 +6,7 @@ import android.util.Log
 import android.widget.Toast
 import com.example.accidentnotificationapp.data.Contact
 
-fun SendSMS(context: Context, contacts: List<Contact>, address: String) {
+fun sendSMS(context: Context, contacts: List<Contact>, address: String) {
 	val smsManager = context.getSystemService(SmsManager::class.java)
 	val finalMessage: String = "Your family member got into an accident, " + address.ifEmpty {
 		 "Unable to get location."
