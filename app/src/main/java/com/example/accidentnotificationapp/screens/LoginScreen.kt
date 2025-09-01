@@ -40,14 +40,14 @@ import com.example.accidentnotificationapp.network.performLogin
 import com.example.accidentnotificationapp.network.performSignup
 
 @Composable
-fun UserLoginScreen(navController: NavController, userPreferences: UserPreferences) {
+fun UserLoginScreen(navController: NavController) {
 	var isLoginScreen by remember { mutableStateOf(true) }
 	var name by remember { mutableStateOf("") }
 	var email by remember { mutableStateOf("") }
 	var password by remember { mutableStateOf("") }
 	var showMessage by remember { mutableStateOf<String?>(null) }
 	val context = LocalContext.current
-	
+	val userPreferences = remember { UserPreferences(context) }
 	val isLoggedIn by userPreferences.isLoggedIn.collectAsState(initial = false)
 	
 	LaunchedEffect(isLoggedIn) {

@@ -11,17 +11,17 @@ import com.example.accidentnotificationapp.screens.Home
 import com.example.accidentnotificationapp.screens.UserSplashScreen
 
 @Composable
-fun UserNavigation(userPreferences: UserPreferences){
+fun UserNavigation(){
     val navController = rememberNavController()
     NavHost(navController = navController, startDestination = UserScreens.SplashScreen.name) {
         composable(UserScreens.SplashScreen.name){
             UserSplashScreen(navController = navController)
         }
         composable(UserScreens.LoginScreen.name) {
-            UserLoginScreen(navController = navController, userPreferences = userPreferences)
+            UserLoginScreen(navController = navController)
         }
         composable(UserScreens.HomeScreen.name) {
-            Home(navController = navController, userPreferences = userPreferences)
+            Home(navController = navController)
         }
     }
 }
