@@ -6,6 +6,7 @@ import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Address
 import android.location.Geocoder
 import android.location.Location
 import android.location.LocationManager
@@ -15,13 +16,12 @@ import androidx.core.app.ActivityCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
+import kotlinx.coroutines.runBlocking
 import java.util.Locale
 
 private const val LOCATION_REQUEST_CODE = 200
-private var address: String = ""
-private var accident = false
-
 class LocationHelper(private val activity: Activity, private val context: Context) {
+	
 	
 	private var fusedLocationClient: FusedLocationProviderClient =
 		LocationServices.getFusedLocationProviderClient(activity)
@@ -33,27 +33,13 @@ class LocationHelper(private val activity: Activity, private val context: Contex
 		locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER) ||
 				locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
 	
+	private var address: String = ""
+	private var accident = false
+	
 	init {
-		if (!isLocationEnabled) {
-			showLocationSettingsDialog()
-		} else {
-			fetchLocation()
-		}
+		if (isLocationEnabled) fetchLocation()
 	}
 	
-	private fun showLocationSettingsDialog() {
-		val dialogBuilder = AlertDialog.Builder(context)
-		dialogBuilder.setTitle("Location Services Required")
-		dialogBuilder.setMessage("Please enable location services to use this app.")
-		dialogBuilder.setPositiveButton("Enable") { _, _ ->
-			val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
-			activity.startActivity(intent)
-		}
-		dialogBuilder.setNegativeButton("Cancel") { dialog, _ ->
-			dialog.dismiss()
-		}
-		dialogBuilder.create().show()
-	}
 	private fun fetchLocation() {
 		if (ActivityCompat.checkSelfPermission(
 				context,
@@ -74,14 +60,17 @@ class LocationHelper(private val activity: Activity, private val context: Contex
 			)
 			return
 		}
-		
+		showLocationSettingsDialog()
 		fusedLocationClient.getCurrentLocation(
 			Priority.PRIORITY_HIGH_ACCURACY,
 			null
 		).addOnSuccessListener { location: Location? ->
 			location?.let {
 				val geocoder = Geocoder(context, Locale.getDefault())
-				val addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+				val addresses: List<Address>?;
+				runBlocking {
+					addresses = geocoder.getFromLocation(it.latitude, it.longitude, 1)
+				}
 				if (!addresses.isNullOrEmpty()) {
 					address = addresses[0].getAddressLine(0)
 				} else {
@@ -94,6 +83,22 @@ class LocationHelper(private val activity: Activity, private val context: Contex
 			}
 		}
 	}
+	
+	private fun showLocationSettingsDialog() {
+		if (activity.isFinishing || activity.isDestroyed) return
+		val dialogBuilder = AlertDialog.Builder(context)
+		dialogBuilder.setTitle("Location Services Required")
+		dialogBuilder.setMessage("Please enable location services to use this app.")
+		dialogBuilder.setPositiveButton("Enable") { _, _ ->
+			val intent = Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)
+			activity.startActivity(intent)
+		}
+		dialogBuilder.setNegativeButton("Cancel") { dialog, _ ->
+			dialog.dismiss()
+		}
+		dialogBuilder.create().show()
+	}
+	
 	
 	fun getAddress(): String = address
 	
